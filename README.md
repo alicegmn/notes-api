@@ -112,14 +112,9 @@ src/
 - `npm run build` — Build TypeScript
 - `npm start` — Run compiled server
 
-## Deployment
-
-- Ready to deploy on platforms like Vercel (API), Railway, or Render
-- Compatible with serverless PostgreSQL providers like Neon
-
 ## API Documentation
 
-- Auto-generated and available at `/api/docs` (Swagger UI)
+- Available at `/api/docs` (Swagger UI)
 
 ## Contributing
 
