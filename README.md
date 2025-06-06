@@ -25,8 +25,7 @@ A simple, secure, and modern RESTful API for creating, managing, and authenticat
 1. **Clone the repository:**
 
    ```bash
-   git clone <REPO_URL>
-   cd server
+   git clone https://github.com/alicegmn/notes-api
    ```
 
 2. **Install dependencies:**
@@ -71,7 +70,7 @@ A simple, secure, and modern RESTful API for creating, managing, and authenticat
    npm run dev
    ```
 
-   The API will be available at `http://localhost:3000`.
+   The API will be available at `http://localhost:3000/api`.
 
 6. **Access the Swagger docs:**
 
