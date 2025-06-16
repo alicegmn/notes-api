@@ -6,7 +6,7 @@ import userRoutes from "./routes/users.js";
 import notesRoutes from "./routes/notes.js";
 import { setupSwagger } from "./swagger/swagger.js";
 
-console.log("🚀 Server starting...");
+console.log("Server starting...");
 
 process.on("uncaughtException", (err) => {
   console.error("🔥 Uncaught Exception:", err);
