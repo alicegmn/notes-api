@@ -21,6 +21,42 @@ const router = Router();
 
 /**
  * @swagger
+ * /api/notes/search:
+ *   get:
+ *     summary: Search notes by title or text content
+ *     tags: [Notes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: query
+ *         required: true
+ *         description: The search string to match against note title or text
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of matching notes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 results:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Note'
+ *       400:
+ *         description: Query string missing or empty
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/search", requireAuth, searchNotes);
+
+/**
+ * @swagger
  * /api/notes:
  *   get:
  *     summary: Get all notes for the authenticated user
@@ -191,41 +227,5 @@ router.patch("/:id", requireAuth, patchNote);
  *         description: Unauthorized
  */
 router.delete("/:id", requireAuth, deleteNote);
-
-/**
- * @swagger
- * /api/notes/search:
- *   get:
- *     summary: Search notes by title or text content
- *     tags: [Notes]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: query
- *         required: true
- *         description: The search string to match against note title or text
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: List of matching notes
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 results:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Note'
- *       400:
- *         description: Query string missing or empty
- *       500:
- *         description: Internal server error
- */
-router.get("/search", requireAuth, searchNotes);
 
 export default router;

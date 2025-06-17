@@ -1,8 +1,10 @@
 // src/swagger.ts
+
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import { Express } from "express";
 
+// Swagger configuration options
 const options: swaggerJSDoc.Options = {
   definition: {
     openapi: "3.0.0",
@@ -20,6 +22,7 @@ const options: swaggerJSDoc.Options = {
     ],
     components: {
       securitySchemes: {
+        // JWT Bearer authentication scheme definition
         bearerAuth: {
           type: "http",
           scheme: "bearer",
@@ -27,7 +30,7 @@ const options: swaggerJSDoc.Options = {
         },
       },
       schemas: {
-        // 🧑 User schemas
+        // User-related schemas
         SignupInput: {
           type: "object",
           required: ["name", "email", "password"],
@@ -71,8 +74,7 @@ const options: swaggerJSDoc.Options = {
             user: { $ref: "#/components/schemas/UserResponse" },
           },
         },
-
-        // 📝 Note schemas
+        // Note-related schemas
         Note: {
           type: "object",
           properties: {
@@ -115,13 +117,17 @@ const options: swaggerJSDoc.Options = {
         },
       },
     },
+    // Secure all endpoints with bearerAuth by default
     security: [{ bearerAuth: [] }],
   },
+  // Path to the API routes containing JSDoc comments
   apis: ["./src/routes/*.ts"],
 };
 
+// Generate the Swagger specification from options
 const swaggerSpec = swaggerJSDoc(options);
 
+// Middleware function to set up Swagger UI at /api/docs
 export function setupSwagger(app: Express) {
   app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 }

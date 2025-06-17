@@ -1,9 +1,14 @@
+import {
+  CreateNoteSchema,
+  UpdateNoteSchema,
+  PatchNoteSchema,
+} from "../schemas/noteSchema.js";
 import { Request, Response } from "express";
 import pool from "../db/pool.js";
 
+// Get all notes for the authenticated user
 export async function getNotes(req: Request, res: Response) {
   const userId = req.user!.id;
-
   try {
     const { rows } = await pool.query(
       "SELECT * FROM notes WHERE user_id = $1 ORDER BY created_at DESC",
@@ -16,25 +21,22 @@ export async function getNotes(req: Request, res: Response) {
   }
 }
 
+// Get a single note by its ID for the authenticated user
 export async function getNoteById(req: Request, res: Response) {
   const { id } = req.params;
   const userId = req.user!.id;
-
   try {
     const result = await pool.query(
       `SELECT * FROM notes WHERE id = $1 AND user_id = $2`,
       [id, userId]
     );
-
     const note = result.rows[0];
-
     if (!note) {
       return res.status(404).json({
         success: false,
         message: "Note not found",
       });
     }
-
     res.json({ success: true, note });
   } catch (err) {
     console.error("Fetch single note error:", err);
@@ -42,17 +44,19 @@ export async function getNoteById(req: Request, res: Response) {
   }
 }
 
+// Create a new note for the authenticated user
 export async function createNote(req: Request, res: Response) {
-  const { title, text } = req.body;
-  const userId = req.user!.id;
-
-  if (!title || !text) {
+  // Validate request body using Zod schema
+  const parsed = CreateNoteSchema.safeParse(req.body);
+  if (!parsed.success) {
     return res.status(400).json({
       success: false,
-      message: "Title and text are required",
+      message: "Validation failed",
+      fieldErrors: parsed.error.flatten().fieldErrors,
     });
   }
-
+  const { title, text } = parsed.data;
+  const userId = req.user!.id;
   try {
     const result = await pool.query(
       `INSERT INTO notes (title, text, user_id)
@@ -60,7 +64,6 @@ export async function createNote(req: Request, res: Response) {
        RETURNING *`,
       [title, text, userId]
     );
-
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error("Create note error:", err);
@@ -68,18 +71,20 @@ export async function createNote(req: Request, res: Response) {
   }
 }
 
+// Update a note (full update) for the authenticated user
 export async function updateNote(req: Request, res: Response) {
-  const { id } = req.params;
-  const { title, text } = req.body;
-  const userId = req.user!.id;
-
-  if (!title || !text) {
+  // Validate request body using Zod schema
+  const parsed = UpdateNoteSchema.safeParse(req.body);
+  if (!parsed.success) {
     return res.status(400).json({
       success: false,
-      message: "Title and text are required",
+      message: "Validation failed",
+      fieldErrors: parsed.error.flatten().fieldErrors,
     });
   }
-
+  const { id } = req.params;
+  const { title, text } = parsed.data;
+  const userId = req.user!.id;
   try {
     const result = await pool.query(
       `UPDATE notes
@@ -90,13 +95,11 @@ export async function updateNote(req: Request, res: Response) {
        RETURNING *`,
       [title, text, id, userId]
     );
-
     if (result.rowCount === 0) {
       return res
         .status(404)
         .json({ success: false, message: "Note not found" });
     }
-
     res.json(result.rows[0]);
   } catch (err) {
     console.error("Update note error:", err);
@@ -104,38 +107,36 @@ export async function updateNote(req: Request, res: Response) {
   }
 }
 
+// Partially update a note (patch) for the authenticated user
 export async function patchNote(req: Request, res: Response) {
-  const { id } = req.params;
-  const { title, text } = req.body;
-  const userId = req.user!.id;
-
-  if (!title && !text) {
+  // Validate request body using Zod schema
+  const parsed = PatchNoteSchema.safeParse(req.body);
+  if (!parsed.success) {
     return res.status(400).json({
       success: false,
-      message: "At least one field (title or text) must be provided",
+      message: "Validation failed",
+      fieldErrors: parsed.error.flatten().fieldErrors,
     });
   }
-
+  const { id } = req.params;
+  const { title, text } = parsed.data;
+  const userId = req.user!.id;
   try {
     const fields = [];
     const values: any[] = [];
     let paramIndex = 1;
-
-    if (title) {
+    if (title !== undefined) {
       fields.push(`title = $${paramIndex++}`);
       values.push(title);
     }
-
-    if (text) {
+    if (text !== undefined) {
       fields.push(`text = $${paramIndex++}`);
       values.push(text);
     }
-
-    // Always update modified_at
+    // Always update modified_at timestamp
     fields.push(`modified_at = CURRENT_TIMESTAMP`);
-
-    values.push(id); // $n for WHERE id
-    values.push(userId); // $n+1 for WHERE user_id
+    values.push(id);
+    values.push(userId);
 
     const query = `
       UPDATE notes
@@ -145,14 +146,12 @@ export async function patchNote(req: Request, res: Response) {
     `;
 
     const result = await pool.query(query, values);
-
     if (result.rowCount === 0) {
       return res.status(404).json({
         success: false,
         message: "Note not found or not yours",
       });
     }
-
     return res.json({
       success: true,
       message: "Note updated",
@@ -167,22 +166,20 @@ export async function patchNote(req: Request, res: Response) {
   }
 }
 
+// Delete a note for the authenticated user
 export async function deleteNote(req: Request, res: Response) {
   const { id } = req.params;
   const userId = req.user!.id;
-
   try {
     const result = await pool.query(
       "DELETE FROM notes WHERE id = $1 AND user_id = $2 RETURNING *",
       [id, userId]
     );
-
     if (result.rowCount === 0) {
       return res
         .status(404)
         .json({ success: false, message: "Note not found" });
     }
-
     res.json({ success: true, message: "Note deleted" });
   } catch (err) {
     console.error("Delete note error:", err);
@@ -190,6 +187,7 @@ export async function deleteNote(req: Request, res: Response) {
   }
 }
 
+// Search notes by title or text content for the authenticated user
 export async function searchNotes(req: Request, res: Response) {
   const userId = req.user!.id;
   const query = req.query.query as string;
@@ -201,17 +199,20 @@ export async function searchNotes(req: Request, res: Response) {
   }
 
   try {
+    // Prepare search string with wildcards for ILIKE
+    const search = `%${query}%`;
+
     const result = await pool.query(
       `
       SELECT *
       FROM notes
       WHERE user_id = $1 AND (
-        title ILIKE '%' || $2 || '%' OR
-        text ILIKE '%' || $2 || '%'
+        title ILIKE $2 OR
+        text ILIKE $2
       )
       ORDER BY modified_at DESC
       `,
-      [userId, query]
+      [userId, search]
     );
 
     res.json({ success: true, results: result.rows });

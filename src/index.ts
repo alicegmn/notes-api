@@ -8,10 +8,12 @@ import { setupSwagger } from "./swagger/swagger.js";
 
 console.log("Server starting...");
 
+// Handle uncaught exceptions to prevent server crash
 process.on("uncaughtException", (err) => {
   console.error("🔥 Uncaught Exception:", err);
 });
 
+// Handle unhandled promise rejections globally
 process.on("unhandledRejection", (reason, promise) => {
   console.error("🔥 Unhandled Rejection:", reason);
 });
@@ -19,30 +21,35 @@ process.on("unhandledRejection", (reason, promise) => {
 // Load environment variables from .env file
 dotenv.config();
 
+// Ensure JWT secret is set before starting the server
 if (!process.env.JWT_SECRET) {
   throw new Error("Missing JWT_SECRET in .env");
 }
 
-// Initialize express application
+// Initialize the Express application
 const app = express();
 
-// Middleware
+// Middleware to parse JSON bodies
 app.use(express.json());
+
+// Enable CORS for all requests
 app.use(cors());
 
-// Routes
+// Register user and note routes under /api
 app.use("/api/users", userRoutes);
 app.use("/api/notes", notesRoutes);
+
+// Set up Swagger API documentation at /api/docs
 setupSwagger(app);
 
-// Healthcheck
+// Healthcheck endpoint for simple API up check
 app.get("/api", (_req, res) => {
   res.send("Welcome to the Notes API!");
 });
 
 const PORT = process.env.PORT || 3000;
 
-// Initialize the application
+// Start the server and initialize the database on launch
 app.listen(PORT, async () => {
   await initDB();
   console.log(`Server is running on port http://localhost:${PORT}`);

@@ -1,7 +1,9 @@
 import pool from "./pool.js";
 
+// Initializes database tables if they do not exist
 export async function initDB() {
   try {
+    // Create the users table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -12,6 +14,7 @@ export async function initDB() {
       )
     `);
 
+    // Create the notes table if it doesn't exist
     await pool.query(`
       CREATE TABLE IF NOT EXISTS notes (
         id SERIAL PRIMARY KEY,
@@ -23,8 +26,10 @@ export async function initDB() {
       )
     `);
 
+    // Log success message
     console.log("Database tables checked/created");
   } catch (err) {
+    // Log and exit process on failure
     console.error("Failed to initialize DB:", err);
     process.exit(1);
   }
